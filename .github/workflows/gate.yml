@@ -1,9 +1,7 @@
 name: gate
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-  pull_request_review:
-    types: [submitted]
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
     inputs:
       pr:
@@ -25,4 +23,6 @@ jobs:
           api=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .body)
           echo "API_BODY<<$api>>"
           echo "PR_HEAD=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq .head.sha)"
-          case "$api" in *"GATE: pass"*) echo "verdict=pass";; *) echo "verdict=fail"; exit 1;; esac
+          n=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR/reviews" --jq length)
+          echo "REVIEWS=$n"
+          if [ "$n" -ge 1 ]; then echo "verdict=pass"; else echo "verdict=fail"; exit 1; fi
